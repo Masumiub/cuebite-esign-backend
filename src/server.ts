@@ -1,0 +1,53 @@
+import cookieParser from "cookie-parser"
+import cors from "cors"
+import express from "express"
+
+import { env } from "./config/env.js"
+import { attachUser } from "./middleware/auth.js"
+import { errorHandler, notFoundHandler } from "./middleware/error.js"
+import { authRouter } from "./routes/auth.routes.js"
+import { envelopesRouter } from "./routes/envelopes.routes.js"
+import { signingRouter } from "./routes/signing.routes.js"
+import { smtpRouter } from "./routes/smtp.routes.js"
+import { templatesRouter } from "./routes/templates.routes.js"
+import { usersRouter } from "./routes/users.routes.js"
+import { ensureUploadsDir } from "./storage/files.js"
+
+const app = express()
+
+// Bumped to allow PDF uploads (data URLs blow past the default 100kb fast).
+app.use(express.json({ limit: "50mb" }))
+app.use(cookieParser())
+app.use(
+  cors({
+    origin: env.CORS_ORIGIN,
+    credentials: true,
+  })
+)
+app.use(attachUser)
+
+app.get("/health", (_req, res) => {
+  res.json({ ok: true, service: "cuebites-esign-backend" })
+})
+
+app.use("/auth", authRouter)
+app.use("/envelopes", envelopesRouter)
+app.use("/sign", signingRouter)
+app.use("/smtp", smtpRouter)
+app.use("/templates", templatesRouter)
+app.use("/users", usersRouter)
+
+app.use(notFoundHandler)
+app.use(errorHandler)
+
+ensureUploadsDir().catch((err) => {
+  console.error("[cuebites-esign-backend] failed to create uploads dir:", err)
+  process.exit(1)
+})
+
+app.listen(env.PORT, () => {
+  console.log(
+    `[cuebites-esign-backend] listening on http://localhost:${env.PORT}`
+  )
+  console.log(`[cuebites-esign-backend] CORS_ORIGIN=${env.CORS_ORIGIN}`)
+})

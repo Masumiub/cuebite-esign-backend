@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+*.log
+
+# Stored PDFs (per-envelope subdirs). Keep the folder but ignore contents.
+uploads/*
+!uploads/.gitkeep

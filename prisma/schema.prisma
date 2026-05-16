@@ -1,0 +1,213 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") 
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(EMPLOYEE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  smtpUpdates  SmtpConfig[] @relation("SmtpConfigUpdater")
+  envelopes    Envelope[]   @relation("EnvelopeCreator")
+  templates    Template[]   @relation("TemplateCreator")
+
+  @@index([role])
+}
+
+enum TemplateCategory {
+  LEGAL
+  HR
+  SALES
+  REAL_ESTATE
+}
+
+/// A reusable starting point for an envelope. Each template owns exactly one
+/// PDF — bytes live on disk at `backend/uploads/templates/<templateId>/document.pdf`.
+/// `storagePath` is nullable so a row can exist before the file write commits.
+model Template {
+  id           String           @id @default(cuid())
+  name         String
+  description  String           @default("")
+  category     TemplateCategory
+  iconKey      String           @default("file-signature")
+  documentName String
+  storagePath  String?
+  byteSize     Int              @default(0)
+  pageCount    Int              @default(0)
+  usageCount   Int              @default(0)
+  lastUsedAt   DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  createdBy    User?   @relation("TemplateCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById  String?
+
+  @@index([createdById])
+  @@index([category])
+  @@index([updatedAt])
+}
+
+enum EnvelopeStatus {
+  draft
+  sent
+  partially_signed
+  completed
+  declined
+  voided
+  expired
+}
+
+enum RecipientStatus {
+  pending
+  sent
+  signed
+  declined
+}
+
+enum FieldType {
+  signature
+  initial
+  date
+  text
+  checkbox
+}
+
+enum RoutingMode {
+  sequential
+  parallel
+}
+
+model Envelope {
+  id          String         @id @default(cuid())
+  subject     String
+  message     String         @default("")
+  status      EnvelopeStatus @default(draft)
+  routingMode RoutingMode    @default(sequential)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  sentAt      DateTime?
+  completedAt DateTime?
+
+  createdBy   User?   @relation("EnvelopeCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
+
+  documents  EnvelopeDocument[]
+  recipients EnvelopeRecipient[]
+  fields     EnvelopeField[]
+  audits     EnvelopeAudit[]
+  signedPdf  EnvelopeSignedPdf?
+
+  @@index([createdById])
+  @@index([status])
+  @@index([updatedAt])
+}
+
+/// Metadata about an uploaded PDF. Bytes live on disk at backend/uploads/<envelopeId>/<storagePath>.
+/// `storagePath` is nullable so demo envelopes without real PDF content can exist.
+model EnvelopeDocument {
+  id          String   @id @default(cuid())
+  envelope    Envelope @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  envelopeId  String
+  name        String
+  pageCount   Int      @default(0)
+  storagePath String?
+  byteSize    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([envelopeId])
+}
+
+model EnvelopeRecipient {
+  id               String          @id @default(cuid())
+  envelope         Envelope        @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  envelopeId       String
+  name             String
+  email            String
+  color            String
+  order            Int
+  status           RecipientStatus @default(pending)
+  consentAt        DateTime?
+  signedAt         DateTime?
+  signatureDataUrl String?         @db.Text
+  initialDataUrl   String?         @db.Text
+  createdAt        DateTime        @default(now())
+
+  @@index([envelopeId, order])
+}
+
+model EnvelopeField {
+  id          String    @id @default(cuid())
+  envelope    Envelope  @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  envelopeId  String
+  documentId  String
+  recipientId String
+  type        FieldType
+  page        Int
+  x           Float
+  y           Float
+  width       Float
+  height      Float
+  required    Boolean   @default(true)
+  /// Signature dataURL or typed text. Nullable until the recipient fills it.
+  value       String?   @db.Text
+
+  @@index([envelopeId])
+  @@index([recipientId])
+}
+
+model EnvelopeAudit {
+  id         String   @id @default(cuid())
+  envelope   Envelope @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  envelopeId String
+  at         DateTime @default(now())
+  /// Free-form actor id (recipient or user). Not a FK because audit lines may
+  /// outlive the actor (e.g. recipient deleted from the envelope later).
+  actorId    String?
+  message    String   @db.Text
+
+  @@index([envelopeId, at])
+}
+
+/// Set once when the last recipient finishes. Bytes live on disk.
+model EnvelopeSignedPdf {
+  id          String   @id @default(cuid())
+  envelope    Envelope @relation(fields: [envelopeId], references: [id], onDelete: Cascade)
+  envelopeId  String   @unique
+  storagePath String
+  byteSize    Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+/// Singleton table: there is at most one row, identified by id="default".
+/// All writes upsert that row. The password is encrypted at rest (AES-256-GCM)
+/// before being stored — never written or read in plaintext through the API.
+model SmtpConfig {
+  id                String   @id @default("default")
+  host              String
+  port              Int      @default(465)
+  secure            Boolean  @default(true)
+  user              String
+  passwordEncrypted String
+  fromName          String?
+  fromEmail         String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  updatedBy         User?    @relation("SmtpConfigUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedById       String?
+}
