@@ -36,9 +36,6 @@ function makeTransport(c: SmtpRuntimeConfig): Transporter {
     port: c.port || 465,
     secure: !!c.secure,
     auth: { user: c.user, pass: c.password },
-    // Force IPv4. Render's free tier has no outbound IPv6, and Node's default
-    // DNS order returns AAAA first → connect ENETUNREACH on every send.
-    family: 4,
   })
 }
 

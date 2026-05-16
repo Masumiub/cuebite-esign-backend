@@ -1,6 +1,13 @@
+import dns from "node:dns"
+
 import cookieParser from "cookie-parser"
 import cors from "cors"
 import express from "express"
+
+// Prefer IPv4 for all outbound DNS lookups. Render's free tier has no outbound
+// IPv6, and Node's default returns AAAA records first → SMTP sends, Supabase
+// REST calls, etc. all fail with ENETUNREACH until the connection times out.
+dns.setDefaultResultOrder("ipv4first")
 
 import { env } from "./config/env.js"
 import { attachUser } from "./middleware/auth.js"
