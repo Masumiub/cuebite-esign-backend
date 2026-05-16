@@ -31,12 +31,19 @@ function fromHeader(c: SmtpRuntimeConfig): string {
 }
 
 function makeTransport(c: SmtpRuntimeConfig): Transporter {
-  return nodemailer.createTransport({
+  // `family: 4` forces IPv4 at the socket layer. Render's free tier has no
+  // outbound IPv6, and `dns.setDefaultResultOrder("ipv4first")` alone is not
+  // sufficient — TLS connect still picks the IPv6 address and fails with
+  // ENETUNREACH. Nodemailer passes `family` through to `net.connect` at
+  // runtime, but it's not in the public TS types, hence the cast.
+  const opts = {
     host: c.host,
     port: c.port || 465,
     secure: !!c.secure,
     auth: { user: c.user, pass: c.password },
-  })
+    family: 4,
+  } as Parameters<typeof nodemailer.createTransport>[0]
+  return nodemailer.createTransport(opts)
 }
 
 function renderSigningHtml({
