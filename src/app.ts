@@ -48,3 +48,8 @@ app.use("/users", usersRouter)
 
 app.use(notFoundHandler)
 app.use(errorHandler)
+
+// Default export so Vercel's @vercel/node can treat this file as a serverless
+// function if it ever resolves to here directly (in addition to api/index.ts).
+// An Express app is itself a Node request handler, so Vercel can invoke it.
+export default app
