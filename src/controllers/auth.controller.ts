@@ -20,6 +20,12 @@ const registerSchema = z.object({
   role: z.nativeEnum(Role).default(Role.EMPLOYEE),
 })
 
+const signupSchema = z.object({
+  email: z.string().email().toLowerCase(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  name: z.string().min(1).max(120),
+})
+
 // ---- handlers -------------------------------------------------------------
 
 export async function login(req: Request, res: Response, next: NextFunction) {
@@ -62,6 +68,21 @@ export async function register(
   try {
     const input = registerSchema.parse(req.body)
     const user = await authService.register(input)
+    res.status(201).json({ user })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export async function signup(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const input = signupSchema.parse(req.body)
+    const { user, token } = await authService.signup(input)
+    setSessionCookie(res, token)
     res.status(201).json({ user })
   } catch (err) {
     next(err)

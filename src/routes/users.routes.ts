@@ -16,7 +16,7 @@ usersRouter.get(
 usersRouter.post(
   "/",
   requireAuth,
-  requireRole(Role.ADMIN),
+  requireRole(Role.ADMIN, Role.MANAGER),
   usersController.create
 )
 

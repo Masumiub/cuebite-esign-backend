@@ -27,7 +27,14 @@ export async function create(
   next: NextFunction
 ) {
   try {
+    if (!req.user) throw new UnauthorizedError()
     const input = createUserSchema.parse(req.body)
+    // Privilege escalation guard: the route lets MANAGER in so they can
+    // onboard their team, but they can only mint EMPLOYEE accounts. Only
+    // ADMIN can create ADMIN or MANAGER rows.
+    if (req.user.role === Role.MANAGER && input.role !== Role.EMPLOYEE) {
+      throw new ForbiddenError("Managers can only create employee accounts")
+    }
     const user = await usersService.createUser(input)
     res.status(201).json({ user })
   } catch (err) {

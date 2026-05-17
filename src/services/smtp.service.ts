@@ -200,7 +200,7 @@ export async function sendSigningLinkEmails(input: SendSigningInput) {
     input.senderName ||
     runtime.fromName ||
     input.fallbackSenderEmail ||
-    "Cuebites eSign"
+    "Cuepact"
   return sendSigningEmails(runtime, {
     subject: input.subject,
     message: input.message,
@@ -220,7 +220,7 @@ export async function sendCompletedPdfEmails(input: SendCompletedInput) {
   const runtime = await getRuntimeConfig()
   if (!runtime) throw new BadRequestError("SMTP is not configured.")
   const senderName =
-    input.senderName || runtime.fromName || "Cuebites eSign"
+    input.senderName || runtime.fromName || "Cuepact"
   return sendCompletedEmails(runtime, {
     subject: input.subject,
     senderName,

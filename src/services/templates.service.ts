@@ -45,6 +45,23 @@ export async function getTemplate(id: string) {
   return t
 }
 
+/**
+ * Read-only fetch of the template's PDF for preview. Does NOT bump
+ * usageCount or lastUsedAt — those belong to `useTemplate`, which
+ * represents intent to start an envelope from the template.
+ */
+export async function getTemplateDocument(id: string) {
+  const t = await prisma.template.findUnique({ where: { id } })
+  if (!t) throw new NotFoundError("Template not found")
+  if (!t.storagePath) {
+    throw new NotFoundError("Template has no document attached")
+  }
+  const buf = await readPdfFile(t.storagePath)
+  return {
+    contentBase64: `data:application/pdf;base64,${bufferToBase64(buf)}`,
+  }
+}
+
 export type CreateTemplateInput = {
   name: string
   description: string

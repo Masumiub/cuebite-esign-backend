@@ -69,7 +69,7 @@ function renderSigningHtml({
         <tr><td>
           <div style="display:inline-flex;align-items:center;gap:8px;color:#1e3a8a;font-weight:600;font-size:14px;">
             <span style="display:inline-block;width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,#3b82f6,#1e3a8a);"></span>
-            Cuebites eSign
+            Cuepact
           </div>
           <h1 style="font-size:20px;line-height:1.4;color:#0a0a0a;margin:18px 0 6px;">Hi ${escapeHtml(recipientName)},</h1>
           <p style="font-size:14px;color:#525252;margin:0 0 18px;">
@@ -80,7 +80,7 @@ function renderSigningHtml({
           <p style="font-size:12px;color:#737373;margin:22px 0 0;">If the button doesn't work, paste this link into your browser:<br/><a href="${link}" style="color:#1d4ed8;word-break:break-all;">${link}</a></p>
         </td></tr>
       </table>
-      <p style="font-size:11px;color:#737373;margin-top:14px;">Sent via Cuebites eSign · do not reply.</p>
+      <p style="font-size:11px;color:#737373;margin-top:14px;">Sent via Cuepact · do not reply.</p>
     </td></tr>
   </table>
 </body></html>`
@@ -108,7 +108,7 @@ function renderSigningText({
     "",
     `Open the document and sign here: ${link}`,
     "",
-    "— Cuebites eSign",
+    "— Cuepact",
   ]
     .filter((l): l is string => l !== null)
     .join("\n")
@@ -123,9 +123,9 @@ export async function sendTest(
   const info = await transporter.sendMail({
     from: fromHeader(config),
     to,
-    subject: "Cuebites eSign — SMTP test",
-    text: "If you can read this, your SMTP config in Cuebites eSign is working.",
-    html: "<p>If you can read this, your SMTP config in <strong>Cuebites eSign</strong> is working.</p>",
+    subject: "Cuepact — SMTP test",
+    text: "If you can read this, your SMTP config in Cuepact is working.",
+    html: "<p>If you can read this, your SMTP config in <strong>Cuepact</strong> is working.</p>",
   })
   return { messageId: info.messageId ?? null }
 }
@@ -148,7 +148,7 @@ function renderCompletedHtml({
         <tr><td>
           <div style="display:inline-flex;align-items:center;gap:8px;color:#1e3a8a;font-weight:600;font-size:14px;">
             <span style="display:inline-block;width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,#3b82f6,#1e3a8a);"></span>
-            Cuebites eSign
+            Cuepact
           </div>
           <h1 style="font-size:20px;line-height:1.4;color:#0a0a0a;margin:18px 0 6px;">Hi ${escapeHtml(recipientName)},</h1>
           <p style="font-size:14px;color:#525252;margin:0 0 18px;">
@@ -157,7 +157,7 @@ function renderCompletedHtml({
           <p style="font-size:13px;color:#737373;margin:0;">Sent on behalf of <strong style="color:#0a0a0a;">${escapeHtml(senderName)}</strong>.</p>
         </td></tr>
       </table>
-      <p style="font-size:11px;color:#737373;margin-top:14px;">Sent via Cuebites eSign · do not reply.</p>
+      <p style="font-size:11px;color:#737373;margin-top:14px;">Sent via Cuepact · do not reply.</p>
     </td></tr>
   </table>
 </body></html>`
@@ -180,7 +180,7 @@ function renderCompletedText({
     "",
     `Sent on behalf of ${senderName}.`,
     "",
-    "— Cuebites eSign",
+    "— Cuepact",
   ].join("\n")
 }
 

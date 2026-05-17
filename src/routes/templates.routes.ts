@@ -9,6 +9,11 @@ export const templatesRouter = Router()
 // creator-or-admin on delete.
 templatesRouter.get("/", requireAuth, templatesController.list)
 templatesRouter.get("/:id", requireAuth, templatesController.get)
+templatesRouter.get(
+  "/:id/document",
+  requireAuth,
+  templatesController.getDocument
+)
 templatesRouter.post("/", requireAuth, templatesController.create)
 templatesRouter.post("/:id/use", requireAuth, templatesController.use)
 templatesRouter.delete("/:id", requireAuth, templatesController.remove)

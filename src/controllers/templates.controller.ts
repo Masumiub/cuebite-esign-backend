@@ -42,6 +42,19 @@ export async function get(
   }
 }
 
+export async function getDocument(
+  req: Request<{ id: string }>,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const result = await templatesService.getTemplateDocument(req.params.id)
+    res.json(result)
+  } catch (err) {
+    next(err)
+  }
+}
+
 export async function create(
   req: Request,
   res: Response,

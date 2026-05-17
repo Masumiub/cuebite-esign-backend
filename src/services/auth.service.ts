@@ -70,3 +70,20 @@ export async function register(input: RegisterInput): Promise<PublicUser> {
   })
   return publicUser(user)
 }
+
+export type SignupInput = { email: string; password: string; name: string }
+
+/**
+ * Public self-signup. Always creates an EMPLOYEE — admin accounts can only
+ * be minted via the auth-gated `register` endpoint. Mints a session token
+ * so the controller can log the new user in immediately.
+ */
+export async function signup(input: SignupInput): Promise<LoginResult> {
+  const user = await register({ ...input, role: Role.EMPLOYEE })
+  const payload: SessionPayload = {
+    sub: user.id,
+    email: user.email,
+    role: user.role,
+  }
+  return { user, token: signSession(payload) }
+}
